@@ -190,14 +190,21 @@ brew tap edisontrent17/dc-cli https://github.com/edisontrent17/homebrew-dc-cli
 brew install dc-cli
 ```
 
-Prepare a release archive and SHA256 for Homebrew:
+Cut a release:
 
 ```bash
-chmod +x scripts/prepare-homebrew-release.sh
-./scripts/prepare-homebrew-release.sh
+chmod +x scripts/release.sh
+./scripts/release.sh 0.1.2
 ```
 
-That script writes `release/dc-cli-<version>.tar.gz` and prints the `sha256` you should copy into the formula.
+That script:
+- bumps the package version
+- builds the CLI
+- commits and pushes `main`
+- creates and pushes tag `v<version>`
+- downloads the GitHub tarball for that tag
+- updates `Formula/dc-cli.rb` with the correct release URL and SHA256
+- commits and pushes the formula update
 
 Recommended Homebrew layout:
 
@@ -209,11 +216,10 @@ Recommended Homebrew layout:
 Release flow:
 
 1. Bump `package.json` version.
-2. Commit and push `main`.
-3. Tag and push `v<version>`.
-4. Download the GitHub tag tarball and compute its SHA256.
-5. Update `Formula/dc-cli.rb` in the tap repo with the new `url` and `sha256`.
-6. `brew update && brew upgrade dc-cli`
+2. Run `./scripts/release.sh <version>`.
+3. Copy the updated `Formula/dc-cli.rb` into the tap repo.
+4. Push the tap repo.
+5. `brew update && brew upgrade dc-cli`
 
 ## Notes
 
@@ -227,4 +233,4 @@ Release flow:
 - When building a new DLO with `--dlo-category Engagement`, pass `--event-datetime-field` because the spec requires it.
 - Snowflake connection creation is a natural next step because the spec exposes `POST /ssot/connections` and connector metadata is now queryable from the CLI.
 - The included Homebrew formula is a tap-ready template in `Formula/dc-cli.rb`.
-- Use `scripts/prepare-homebrew-release.sh` to generate the release tarball and SHA256 for the formula.
+- Use `scripts/release.sh` to cut a release and update the formula for the new tag.
