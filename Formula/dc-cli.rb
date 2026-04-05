@@ -1,8 +1,8 @@
 class DcCli < Formula
   desc "CLI for Salesforce Data 360 connectors, connections, and data streams"
   homepage "https://github.com/edisontrent17/dc-cli"
-  url "https://github.com/edisontrent17/dc-cli/archive/refs/tags/v0.1.0.tar.gz"
-  sha256 "c186f280c72290e443f35ebf9065a37f67e8b9b3285006f1be9ab74d1247ea28"
+  url "https://github.com/edisontrent17/dc-cli/archive/refs/tags/v0.1.1.tar.gz"
+  sha256 "c6fbbea5bb8ea3bf2077193bb5fd69927ee0d2650d03d0dc099aa5f1a41c9267"
 
   depends_on "node"
 
