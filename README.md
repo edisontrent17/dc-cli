@@ -186,8 +186,8 @@ Run the stream immediately after creation:
 Install through Homebrew:
 
 ```bash
-brew install ./Formula/dc-cli.rb
-dc-cli --help
+brew tap edisontrent17/dc-cli https://github.com/edisontrent17/homebrew-dc-cli
+brew install dc-cli
 ```
 
 Prepare a release archive and SHA256 for Homebrew:
@@ -198,6 +198,22 @@ chmod +x scripts/prepare-homebrew-release.sh
 ```
 
 That script writes `release/dc-cli-<version>.tar.gz` and prints the `sha256` you should copy into the formula.
+
+Recommended Homebrew layout:
+
+1. Keep this repo, `edisontrent17/dc-cli`, as the source repo.
+2. Publish versioned tags here such as `v0.1.1`.
+3. Keep the Homebrew formula in a separate tap repo: `edisontrent17/homebrew-dc-cli`.
+4. Point the tap formula at the tagged source tarball from this repo.
+
+Release flow:
+
+1. Bump `package.json` version.
+2. Commit and push `main`.
+3. Tag and push `v<version>`.
+4. Download the GitHub tag tarball and compute its SHA256.
+5. Update `Formula/dc-cli.rb` in the tap repo with the new `url` and `sha256`.
+6. `brew update && brew upgrade dc-cli`
 
 ## Notes
 
@@ -210,5 +226,5 @@ That script writes `release/dc-cli-<version>.tar.gz` and prints the `sha256` you
 - `--dataspace` is sent as a query parameter and is also used as the default DLO dataspace when building a new DLO from flags.
 - When building a new DLO with `--dlo-category Engagement`, pass `--event-datetime-field` because the spec requires it.
 - Snowflake connection creation is a natural next step because the spec exposes `POST /ssot/connections` and connector metadata is now queryable from the CLI.
-- The included Homebrew formula is in `Formula/dc-cli.rb`.
+- The included Homebrew formula is a tap-ready template in `Formula/dc-cli.rb`.
 - Use `scripts/prepare-homebrew-release.sh` to generate the release tarball and SHA256 for the formula.

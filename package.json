@@ -1,6 +1,6 @@
 {
   "name": "dc-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "CLI for Salesforce Data 360 connectors, connections, and data streams.",
   "type": "module",
