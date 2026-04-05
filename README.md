@@ -6,6 +6,7 @@ Small TypeScript CLI for working with Salesforce Data 360 Connect API resources.
 
 Current commands:
 
+- `data-stream list` for `GET /ssot/data-streams`
 - `data-stream create` for `POST /ssot/data-streams`
 - `connector list` for `GET /ssot/connectors`
 - `connector metadata` for `GET /ssot/connectors/{connectorType}`
@@ -64,6 +65,12 @@ Create from a full JSON payload:
 ```bash
 ./bin/dc-cli data-stream create \
   --payload-file ./my-data-stream.json
+```
+
+List data streams:
+
+```bash
+./bin/dc-cli data-stream list
 ```
 
 List available connector types:

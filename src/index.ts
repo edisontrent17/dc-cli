@@ -31,9 +31,12 @@ type Options = {
   json: boolean;
   runAfterCreate: boolean;
   payloadFile?: string;
+  filter?: string;
   filters?: string;
   orderBy?: string;
   fieldGroup?: string;
+  limit?: number;
+  offset?: number;
   connectorMetadataType?: string;
   connectionId?: string;
   method?: string;
@@ -212,11 +215,20 @@ function parseArgs(argv: string[]): Options {
       case "filters":
         defaults.filters = readValue(argv, index++, token);
         break;
+      case "filter":
+        defaults.filter = readValue(argv, index++, token);
+        break;
       case "order-by":
         defaults.orderBy = readValue(argv, index++, token);
         break;
       case "field-group":
         defaults.fieldGroup = readValue(argv, index++, token);
+        break;
+      case "limit":
+        defaults.limit = Number.parseInt(readValue(argv, index++, token), 10);
+        break;
+      case "offset":
+        defaults.offset = Number.parseInt(readValue(argv, index++, token), 10);
         break;
       case "connector-metadata-type":
         defaults.connectorMetadataType = readValue(argv, index++, token);
@@ -328,49 +340,65 @@ async function runDataStreamCommand(options: Options): Promise<number> {
     return 1;
   }
 
-  if (options.subcommand !== "create") {
-    throw new CliError(`Unknown data-stream command: ${options.subcommand}`);
-  }
-
-  const payload = await loadPayload(options);
-
-  if (options.dryRun) {
-    printJson(payload);
-    return 0;
-  }
-
   const auth = await resolveAuth(options);
-  const response = await requestJson({
-    method: "POST",
-    instanceUrl: auth.instanceUrl,
-    accessToken: auth.accessToken,
-    apiVersion: options.apiVersion,
-    dataspace: options.dataspace,
-    path: "/ssot/data-streams",
-    payload
-  });
 
-  printJson(response);
-
-  if (options.runAfterCreate) {
-    const recordId = getObjectValue(response, "recordId");
-    if (typeof recordId !== "string" || recordId.length === 0) {
-      throw new CliError("Create succeeded but no recordId was returned, so the run action cannot be invoked.");
+  switch (options.subcommand) {
+    case "list": {
+      const response = await requestJson({
+        method: "GET",
+        instanceUrl: auth.instanceUrl,
+        accessToken: auth.accessToken,
+        apiVersion: options.apiVersion,
+        dataspace: options.dataspace,
+        path: "/ssot/data-streams",
+        query: buildDataStreamListQuery(options)
+      });
+      printJson(response);
+      return 0;
     }
+    case "create": {
+      const payload = await loadPayload(options);
 
-    const runResponse = await requestJson({
-      method: "POST",
-      instanceUrl: auth.instanceUrl,
-      accessToken: auth.accessToken,
-      apiVersion: options.apiVersion,
-      dataspace: options.dataspace,
-      path: `/ssot/data-streams/${recordId}/actions/run`,
-      payload: {}
-    });
-    printJson(runResponse);
+      if (options.dryRun) {
+        printJson(payload);
+        return 0;
+      }
+
+      const response = await requestJson({
+        method: "POST",
+        instanceUrl: auth.instanceUrl,
+        accessToken: auth.accessToken,
+        apiVersion: options.apiVersion,
+        dataspace: options.dataspace,
+        path: "/ssot/data-streams",
+        payload
+      });
+
+      printJson(response);
+
+      if (options.runAfterCreate) {
+        const recordId = getObjectValue(response, "recordId");
+        if (typeof recordId !== "string" || recordId.length === 0) {
+          throw new CliError("Create succeeded but no recordId was returned, so the run action cannot be invoked.");
+        }
+
+        const runResponse = await requestJson({
+          method: "POST",
+          instanceUrl: auth.instanceUrl,
+          accessToken: auth.accessToken,
+          apiVersion: options.apiVersion,
+          dataspace: options.dataspace,
+          path: `/ssot/data-streams/${recordId}/actions/run`,
+          payload: {}
+        });
+        printJson(runResponse);
+      }
+
+      return 0;
+    }
+    default:
+      throw new CliError(`Unknown data-stream command: ${options.subcommand}`);
   }
-
-  return 0;
 }
 
 async function runConnectorCommand(options: Options): Promise<number> {
@@ -986,6 +1014,23 @@ function buildConnectorListQuery(options: Options): Record<string, string> {
   return query;
 }
 
+function buildDataStreamListQuery(options: Options): Record<string, string> {
+  const query: Record<string, string> = {};
+  if (options.filter) {
+    query.filter = options.filter;
+  }
+  if (options.orderBy) {
+    query.orderBy = options.orderBy;
+  }
+  if (typeof options.limit === "number" && Number.isFinite(options.limit)) {
+    query.limit = String(options.limit);
+  }
+  if (typeof options.offset === "number" && Number.isFinite(options.offset)) {
+    query.offset = String(options.offset);
+  }
+  return query;
+}
+
 function getObjectValue(object: JsonObject, key: string): JsonValue | undefined {
   return object[key];
 }
@@ -1020,6 +1065,10 @@ function printHelp(command?: string, subcommand?: string): void {
       printCreateHelp();
       return;
     }
+    if (subcommand === "list") {
+      printDataStreamListHelp();
+      return;
+    }
   }
 
   if (command === "connector") {
@@ -1049,7 +1098,28 @@ function printDataStreamHelp(): void {
   console.log(`usage: dc-cli data-stream <command>
 
 Commands:
+  list     List Data 360 data streams
   create   Create a Data 360 data stream`);
+}
+
+function printDataStreamListHelp(): void {
+  console.log(`usage: dc-cli data-stream list [options]
+
+List data streams through GET /ssot/data-streams.
+
+Options:
+  --instance-url <url>
+  --access-token <token>
+  --username <value>
+  --password <value>
+  --security-token <value>
+  --login-url <url>
+  --api-version <version>
+  --dataspace <name>
+  --filter <value>
+  --order-by <value>
+  --limit <value>
+  --offset <value>`);
 }
 
 function printConnectorHelp(): void {
